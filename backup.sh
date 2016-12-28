@@ -50,8 +50,8 @@ if [[ $FILE_NAME == *"ondemandbackupmanager/download"* ]]; then
 #Download the new way, starting Nov 2016
 wget --load-cookies=$COOKIE_FILE_LOCATION -t 0 --retry-connrefused "https://${INSTANCE}/$FILE_NAME" -O "$LOCATION/JIRA-backup-${TODAY}.zip" >/dev/null 2>/dev/null
 else
-#Backward compatible download that will not be supported after Nov 2016
-wget --user=$USERNAME --password=$PASSWORD -t 0 --retry-connrefused "https://${INSTANCE}/webdav/backupmanager/JIRA-backup-${TODAY}.zip" -P "$LOCATION" >/dev/null 2>/dev/null
+#Deprecated download from WEBDAV
+echo "Attempted to download from WEBDAV directory, which is no longer supported"
 fi
 
 fi

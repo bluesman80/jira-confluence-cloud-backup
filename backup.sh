@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# NOT - This script doesn't currently work with the current version of Jira Cloud as of Dec 10th, 2017.
+# Try the .ps1 script instead (which has been already updated).
+
 USERNAME=youruser
 PASSWORD=yourpassword
 INSTANCE=example.atlassian.net

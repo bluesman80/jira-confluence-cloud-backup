@@ -3,7 +3,6 @@
  
 ###--- CONFIGURATION SECTION STARTS HERE ---###
 # MAKE SURE ALL THE VALUES IN THIS SECTION ARE CORRECT BEFORE RUNNIG THE SCRIPT
- 
 EMAIL=
 API_TOKEN=
 HOSTNAME=xxxx.atlassian.net
@@ -40,7 +39,7 @@ echo "BACKUP FAILED!! Message returned: $BKPMSG"
 exit
 fi
  
-# If the backup started correctly intead, it extracts the taskId value from the response
+# If the backup started correctly it extracts the taskId value from the response
 TASK_ID=$(echo "$BKPMSG" | sed -n 's/.*"taskId"[ ]*:[ ]*"\([^"]*\).*/\1/p')
  
  

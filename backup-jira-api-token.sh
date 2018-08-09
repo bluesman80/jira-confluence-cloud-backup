@@ -40,6 +40,7 @@ exit
 fi
  
 # If the backup started correctly it extracts the taskId value from the response
+# As an alternative you can call the endpoint /rest/backup/1/export/lastTaskId to get the last task-id
 TASK_ID=$(echo "$BKPMSG" | sed -n 's/.*"taskId"[ ]*:[ ]*"\([^"]*\).*/\1/p')
  
  

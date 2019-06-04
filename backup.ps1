@@ -1,6 +1,6 @@
 ### PLEASE NOTICE THAT THIS SCRIPT USES THE SESSION ENDPOINT THAT HAS BEEN DEPRECATED. SEE BELOW LINK FOR DETAILS:
 ## https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
-
+#
 # Having the right skillset you can modify this script to use the API Tokens instead (use the bash scripts as example) 
 
 $account     = 'youratlassianjira' # Atlassian subdomain i.e. whateverproceeds.atlassian.net

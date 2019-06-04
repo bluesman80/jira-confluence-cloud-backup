@@ -1,8 +1,14 @@
-﻿$account     = 'youratlassianjira' # Atlassian subdomain i.e. whateverproceeds.atlassian.net
+### PLEASE NOTICE THAT THIS SCRIPT USES THE SESSION ENDPOINT THAT HAS BEEN DEPRECATED. SEE BELOW LINK FOR DETAILS:
+## https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
+
+# Having the right skillset you can modify this script to use the API Tokens instead (use the bash scripts as example) 
+
+$account     = 'youratlassianjira' # Atlassian subdomain i.e. whateverproceeds.atlassian.net
 $username    = 'youratlassianusername' # username without domain
-$password    = 'youratlassianpassword'
+$password    = 'youratlassianpassword' 
 $destination = 'C:\Backups' # Location on server where script is run to dump the backup zip file.
-$attachments = $false # Tells the script whether or not to pull down the attachments as well
+$attachments = 'false' # Tells the script whether or not to pull down the attachments as well
+$cloud     = 'true' # Tells the script whether to export the backup for Cloud or Server
 
 $hostname    = "$account.atlassian.net"
 $today       = Get-Date -format yyyyMMdd-hhmmss
@@ -12,8 +18,8 @@ $string = "cbAttachments:true, exportToCloud:true"
 $stringbinary = [system.Text.Encoding]::Default.GetBytes($String) | %{[System.Convert]::ToString($_,2).PadLeft(8,'0') }
 
 $body = @{
-          cbAttachments='false'
-          exportToCloud='true'
+          cbAttachments=$attachments
+          exportToCloud=$cloud
          }
 $bodyjson = $body | ConvertTo-Json
 

@@ -1,3 +1,6 @@
-This is a backup script taken for automatic Cloud backups, taken from [How to Automate Backups for JIRA Cloud applications](https://confluence.atlassian.com/display/JIRAKB/How+to+Automate+Backups+for+JIRA+Cloud+applications).
+In here you find sample backup scripts for taking automatic Cloud backups. 
 
-It is currently community maintained.
+Kindly notice that the scripts in here are not officially supported and this project is currently community maintained.
+
+For details see [How to Automate Backups for JIRA Cloud applications](https://confluence.atlassian.com/display/JIRAKB/How+to+Automate+Backups+for+JIRA+Cloud+applications).
+

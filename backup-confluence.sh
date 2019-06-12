@@ -4,6 +4,7 @@
 ## COOKIE AUTHENTICATION IS BEING REMOVED AND THIS SCRIPT SHOULD STOP WORKING SOON, RETURNING 401 UNAUTHORIZED.
 ## FOR DETAILS SEE:
 # - https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
+# - https://confluence.atlassian.com/cloud/deprecation-of-basic-authentication-with-passwords-for-jira-and-confluence-apis-972355348.html
 #############################
 
 ### PLEASE NOTICE THAT THE SESSION IS CREATED BY CALLING THE JIRA SESSION ENDPOINT!!! ######

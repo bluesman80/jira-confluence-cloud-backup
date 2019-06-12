@@ -1,10 +1,13 @@
 #!/bin/bash
 
+##### UPDATE JUNE 2019: #####
+## COOKIE AUTHENTICATION IS BEING REMOVED AND THIS SCRIPT SHOULD STOP WORKING SOON, RETURNING 401 UNAUTHORIZED.
+## FOR DETAILS SEE:
+# - https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
+#############################
+
 ### PLEASE NOTICE THAT THE SESSION IS CREATED BY CALLING THE JIRA SESSION ENDPOINT!!! ######
 #### THE SCRIPT DOES NOT WORK IF JIRA IS NOT INSTALLED !!! #######
-
-### ALSO, THE SESSION ENDPOINT IS GOING TO BE DEPRECATED SOON. SEE BELOW LINK FOR DETAILS:
-## https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
 
 ###--- CONFIGURATION SECTION STARTS HERE ---###
 # MAKE SURE ALL THE VALUES IN THIS SECTION ARE CORRECT BEFORE RUNNIG THE SCRIPT

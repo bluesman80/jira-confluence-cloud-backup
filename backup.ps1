@@ -1,18 +1,30 @@
-### PLEASE NOTICE THAT THIS SCRIPT USES THE SESSION ENDPOINT THAT HAS BEEN DEPRECATED. SEE BELOW LINK FOR DETAILS:
-## https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-basic-auth-and-cookie-based-auth/
-#
-# Having the right skillset you can modify this script to use the API Tokens instead (use the bash scripts as example) 
 
 $account     = 'youratlassianjira' # Atlassian subdomain i.e. whateverproceeds.atlassian.net
-$username    = 'youratlassianusername' # username without domain
-$password    = 'youratlassianpassword' 
+$username    = 'youratlassianusername' # username with domain something@domain.com
+$token    = 'youratlassianpassword' # Token created from product https://confluence.atlassian.com/cloud/api-tokens-938839638.html
 $destination = 'C:\Backups' # Location on server where script is run to dump the backup zip file.
 $attachments = 'false' # Tells the script whether or not to pull down the attachments as well
 $cloud     = 'true' # Tells the script whether to export the backup for Cloud or Server
+$today       = Get-Date -format yyyyMMdd-hhm
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
 
-$hostname    = "$account.atlassian.net"
-$today       = Get-Date -format yyyyMMdd-hhmmss
-$credential  = New-Object System.Management.Automation.PSCredential($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+if(!(Test-Path -path $destination)){
+write-host "Folder is not present, creating folder"
+mkdir $destination #Make the path and folder is not present
+}
+else{
+write-host "Path is already present"
+}
+
+#Convert credentials to base64 for REST API header
+function ConvertTo-Base64($string) {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($string);
+    $encoded = [System.Convert]::ToBase64String($bytes);
+    return $encoded;
+    }
+
+    $b64 = ConvertTo-Base64($username + ":" + $token);
+    $auth = $b64;
 
 $string = "cbAttachments:true, exportToCloud:true"
 $stringbinary = [system.Text.Encoding]::Default.GetBytes($String) | %{[System.Convert]::ToString($_,2).PadLeft(8,'0') }
@@ -27,12 +39,19 @@ if ($PSVersionTable.PSVersion.Major -lt 4) {
     throw "Script requires at least PowerShell version 4. Get it here: https://www.microsoft.com/en-us/download/details.aspx?id=40855"
 }
 
-# New session
-Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://$hostname/rest/auth/1/session" -SessionVariable session -Body (@{username = $username; password = $password} | convertTo-Json -Compress) -ContentType 'application/json'
+# Create header for authentication
+    [string]$ContentType = "application/json"
+    [string]$URI = "https://$account.atlassian.net/rest/backup/1/export/runbackup"
+
+    #Create Header
+        $header = @{
+                "Authorization" = "Basic "+$auth
+                "Content-Type"="application/json"
+                    }
 
 # Request backup
 try {
-        $InitiateBackup = Invoke-RestMethod -Method Post -Headers @{"Accept"="application/json"} -Uri "https://$hostname/rest/backup/1/export/runbackup" -WebSession $session -ContentType 'application/json' -Body $bodyjson -Verbose | ConvertTo-Json -Compress | Out-Null
+        $InitiateBackup = Invoke-RestMethod -Method Post -Headers $header -Uri $URI -ContentType $ContentType -Body $bodyjson -Verbose | ConvertTo-Json -Compress | Out-Null
 } catch {
         $InitiateBackup = $_.Exception.Response.GetResponseStream()
         $reader = New-Object System.IO.StreamReader($InitiateBackup)
@@ -43,13 +62,13 @@ try {
 
 $responseBody
 
-$GetBackupID = Invoke-WebRequest -Method Get -WebSession $session https://$hostname/rest/backup/1/export/lastTaskId
+$GetBackupID = Invoke-WebRequest -Method Get -Headers $header https://$account.atlassian.net/rest/backup/1/export/lastTaskId
 $LatestBackupID = $GetBackupID.content
 
 
 # Wait for backup to finish
 do {
-    $status = Invoke-RestMethod -Method Get -Headers @{"Accept"="application/json"} -Uri "https://$hostname/rest/backup/1/export/getProgress?taskId=$LatestBackupID" -WebSession $session
+    $status = Invoke-RestMethod -Method Get -Headers $header -Uri "https://$account.atlassian.net/rest/backup/1/export/getProgress?taskId=$LatestBackupID"
     $statusoutput = $status.result
     $separator = ","
     $option = [System.StringSplitOptions]::None
@@ -71,6 +90,6 @@ if ([bool]($status.PSObject.Properties.Name -match "failedMessage")) {
 }
 
 $BackupDetails = $status.result
-$BackupURI = "https://$hostname/plugins/servlet/$BackupDetails"
+$BackupURI = "https://$account.atlassian.net/plugins/servlet/$BackupDetails"
 
-Invoke-WebRequest -Method Get -Headers @{"Accept"="*/*"} -WebSession $session -Uri $BackupURI -OutFile (Join-Path -Path $destination -ChildPath "JIRA-backup-$today.zip")
+Invoke-WebRequest -Method Get -Headers $header -WebSession $session -Uri $BackupURI -OutFile (Join-Path -Path $destination -ChildPath "JIRA-backup-$today.zip")

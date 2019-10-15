@@ -2,11 +2,19 @@
  
  
 ###--- CONFIGURATION SECTION STARTS HERE ---###
+
 # MAKE SURE ALL THE VALUES IN THIS SECTION ARE CORRECT BEFORE RUNNIG THE SCRIPT
 EMAIL=
 API_TOKEN=
 HOSTNAME=xxxx.atlassian.net
 DOWNLOAD_FOLDER="/absolute/path/here"
+
+# Set to false if you don't want to backup attachments
+INCLUDE_ATTACHMENTS=true
+
+# Set to false if you want to create a backup for Jira Server
+EXPORT_TO_CLOUD=true
+
  
 ### Checks for progress max 3000 times, waiting 20 seconds between one check and the other ###
 # If your instance is big you may want to increase the below values #
@@ -28,7 +36,7 @@ echo "starting the script: $TODAY"
  
  
 ## The $BKPMSG variable is used to save and print the response
-BKPMSG=$(curl -s -u ${EMAIL}:${API_TOKEN} -H "Accept: application/json" -H "Content-Type: application/json" --data-binary '{"cbAttachments":"true", "exportToCloud":"true"}' -X POST https://${HOSTNAME}/rest/backup/1/export/runbackup )
+BKPMSG=$(curl -s -u ${EMAIL}:${API_TOKEN} -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "{\"cbAttachments\":\"$INCLUDE_ATTACHMENTS\", \"exportToCloud\":\"$EXPORT_TO_CLOUD\"}" -X POST https://${HOSTNAME}/rest/backup/1/export/runbackup )
  
 ## Uncomment below line to print the response message also in case of no errors ##
 # echo "Response: $BKPMSG"
@@ -73,7 +81,7 @@ else
  
  
 ## PRINT THE FILE TO DOWNLOAD ##
-echo "File to download: https://${HOSTNAME}/plugins/servlet/${FILE_NAME}"
+echo "Downloading https://${HOSTNAME}/plugins/servlet/${FILE_NAME}"
  
 curl -s -L -u ${EMAIL}:${API_TOKEN} -X GET "https://${HOSTNAME}/plugins/servlet/${FILE_NAME}" -o "$DOWNLOAD_FOLDER/JIRA-backup-${TODAY}.zip"
  

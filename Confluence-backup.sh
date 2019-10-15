@@ -35,7 +35,7 @@ echo "starting the script: $TODAY"
 BKPMSG=$(curl -s -u ${EMAIL}:${API_TOKEN} -H "X-Atlassian-Token: no-check" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json"  -X POST "https://${INSTANCE}/wiki/rest/obm/1.0/runbackup" -d "{\"cbAttachments\":\"$INCLUDE_ATTACHMENTS\" }" )
 
 ## Uncomment below line to print the response message also in case of no errors ##
-# echo "Response message: $BKPMSG"
+# echo "Response message: $BKPMSG \n"
 
 ## Checks if the backup procedure has failed
 if [ "$(echo "$BKPMSG" | grep -ic backup)" -ne 0 ]; then

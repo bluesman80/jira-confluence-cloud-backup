@@ -8,6 +8,9 @@ API_TOKEN=
 INSTANCE=xxx.atlassian.net
 DOWNLOAD_FOLDER="/absolute/path/here"
 
+# Set to false if you don't want to backup attachments
+INCLUDE_ATTACHMENTS=true
+
  
 ### Checks for progress max 3000 times, waiting 20 seconds between one check and the other ###
 # If your instance is big you may want to increase the below values #
@@ -29,10 +32,10 @@ echo "starting the script: $TODAY"
 
 
 ## The $BKPMSG variable is used to save and print the response
-BKPMSG=$(curl -s -u ${EMAIL}:${API_TOKEN} -H "X-Atlassian-Token: no-check" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json"  -X POST "https://${INSTANCE}/wiki/rest/obm/1.0/runbackup" -d '{"cbAttachments":"true" }' )
+BKPMSG=$(curl -s -u ${EMAIL}:${API_TOKEN} -H "X-Atlassian-Token: no-check" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json"  -X POST "https://${INSTANCE}/wiki/rest/obm/1.0/runbackup" -d "{\"cbAttachments\":\"$INCLUDE_ATTACHMENTS\" }" )
 
 ## Uncomment below line to print the response message also in case of no errors ##
-# echo "Response: $BKPMSG"
+# echo "Response message: $BKPMSG"
 
 ## Checks if the backup procedure has failed
 if [ "$(echo "$BKPMSG" | grep -ic backup)" -ne 0 ]; then
@@ -71,8 +74,8 @@ exit
 else
 
 ## PRINT THE FILE TO DOWNLOAD ##
-echo "File to download: https://${INSTANCE}/wiki/download/$FILE_NAME"
+echo "Downloading file: https://${INSTANCE}/wiki/download/$FILE_NAME"
 
-curl -L -u ${EMAIL}:${API_TOKEN} "https://${INSTANCE}/wiki/download/$FILE_NAME" -o "$DOWNLOAD_FOLDER/CONF-backup-${TODAY}.zip"
+curl -s -L -u ${EMAIL}:${API_TOKEN} "https://${INSTANCE}/wiki/download/$FILE_NAME" -o "$DOWNLOAD_FOLDER/CONF-backup-${TODAY}.zip"
 
 fi

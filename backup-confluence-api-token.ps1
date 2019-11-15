@@ -1,9 +1,10 @@
-#$account     = 'youratlassianconfluence' # Atlassian subdomain i.e. whateverproceeds.atlassian.net
-#$username    = 'youratlassianusername' # username with domain something@domain.com
-#$token    = 'youratlassianpassword' # Token created from product https://confluence.atlassian.com/cloud/api-tokens-938839638.html
-#$destination = 'C:\Backups\Confluence' # Location on server where script is run to dump the backup zip file.
-#$attachments = 'false' # Tells the script whether or not to pull down the attachments as well
-#$cloud     = 'true' # Tells the script whether to export the backup for Cloud or Server
+#Edit the following variables to access your cloud site.
+$account     = 'youratlassianconfluence' # Atlassian subdomain i.e. whateverproceeds.atlassian.net
+$username    = 'youratlassianusername' # username with domain something@domain.com
+$token    = 'youratlassianpassword' # Token created from product https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+$destination = 'C:\Backups\Confluence' # Location on server where script is run to dump the backup zip file.
+$attachments = 'false' # Tells the script whether or not to pull down the attachments as well
+$cloud     = 'true' # Tells the script whether to export the backup for Cloud or Server
 $today       = Get-Date -format yyyyMMdd-hhm
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
 

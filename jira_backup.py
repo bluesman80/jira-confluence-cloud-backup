@@ -8,32 +8,64 @@
 # 13/08/18 - NKW - Added help text function, changed string manipulation from substring to regex for consistency.
 # 14/08/18 - NKW - Changed to interactive so can still accept input after compilation. (may change to command line args).
 # 01/10/18 - NKW - Added argparser to run from command line.
-#
+# 09/11/20 - bluesman80 -   Added logging and changed console outputs to logs
+#                           Added traceback
+#                           Added a feature to save the url of the last backup file to disk
+#                           Added a feature to upload the backup file to AWS S3
+#                           Added download-only option
+#                           Changed the behavior of attachments option (default is false now)
+#                           Moved some logic to the main function
+#                           Separated common parts between jira and confluence backups
+#                           Cleaned-up code
 
-import requests
+import traceback
 import time
 import re
-import argparse
+import logging
+import operations
 
-# Constants (DO NOT CHANGE)
-JSON_DATA = b'{"cbAttachments": "true", "exportToCloud": "true"}'
+# Atlassian imposes a restriction on the initiation of a backup process whereas
+# a new process can be initiated after 24 hours
+# This file is used to save the URL of the latest backup file, so we can try
+# to download the latest backup instead of waiting
+FILE_LAST_BACKUP_URL = 'last_backup_file_url_jira.txt'
+PROGRAM_NAME = 'jira'
 
-def jira_backup(account, username, token, json, folder):
 
+def jira_backup(account, attachments, session):
     # Create the full base url for the JIRA instance using the account name.
     url = 'https://' + account + '.atlassian.net'
 
-    # Open new session for cookie persistence and auth.
-    session = requests.Session()
-    session.auth = (username, token)
-    session.headers.update({"Accept": "application/json", "Content-Type": "application/json"})
+    # Set json data to determine if backup to include attachments.
+    json = b'{"cbAttachments": "false", "exportToCloud": "true"}'
+    if attachments:
+        json = b'{"cbAttachments": "true", "exportToCloud": "true"}'
 
+    error = 'error'
     # Start backup
-    backup_req = session.post(url + '/rest/backup/1/export/runbackup', data=json)
+    try:
+        backup_response = session.post(url + '/rest/backup/1/export/runbackup', data=json)
 
-    # Catch error response from backup start and exit if error found.
-    if 'error' in backup_req.text:
-        print(backup_req.text)
+        if backup_response.status_code == 200 and error.casefold() not in backup_response.text:
+            logging.info('Authentication is successful. Backup is starting...')
+        # If we hit the backup init restriction, server returns 406
+        elif backup_response.status_code == 406:
+            file_url = operations.get_backup_file_url(FILE_LAST_BACKUP_URL)
+            # Can return None here if file does not exist
+            return file_url
+        # If there is another backup process running, server returns 412
+        elif backup_response.status_code == 412:
+            logging.info('Another backup is in progress')
+        else:
+            logging.error('Backup could not start. Response code: ' + str(backup_response.status_code))
+            logging.error('Response from server: ' + backup_response.text)
+    except AttributeError:
+        logging.error('Backup could not start (AttributeError)')
+        logging.error('Response from server: ' + backup_response.text)
+        exit(1)
+    except Exception:
+        logging.error('Backup could not start')
+        logging.error(traceback.format_exc())
         exit(1)
 
     # Get task ID of backup.
@@ -43,68 +75,85 @@ def jira_backup(account, username, token, json, folder):
     # set starting task progress values outside of while loop and if statements.
     task_progress = 0
     last_progress = -1
-    global progress_req
+    sleep_timer = 10
+    counter = 0
+    progress_response = None
 
     # Get progress and print update until complete
     while task_progress < 100:
+        logging.debug('Monitoring the progress')
+        progress_response = session.get(url + '/rest/backup/1/export/getProgress?taskId=' + task_id)
 
-        progress_req = session.get(url + '/rest/backup/1/export/getProgress?taskId=' + task_id)
-
-        # Chop just progress update from json response
+        # Chop just progress update from JSON response
         try:
-            task_progress = int(re.search('(?<=progress":)(.*?)(?=,)', progress_req.text).group(1))
-            #print(progress_req.text)
+            task_progress = int(re.search('(?<=progress":)(.*?)(?=,)', progress_response.text).group(1))
+            progress_message = re.search('(?<=message":)(.*?)(?=,)', progress_response.text).group(1)
+            logging.info('Progress message: ' + progress_message)
         except AttributeError:
-            print(progress_req.text)
+            logging.error('Backup could not start (AttributeError)')
+            logging.error('Response from server: ' + progress_response.text)
             exit(1)
 
-        if (last_progress != task_progress) and 'error' not in progress_req.text:
-            print(task_progress)
+        if (last_progress != task_progress) and error.casefold() not in progress_response.text:
+            logging.info(f'Progress: {task_progress}%')
             last_progress = task_progress
-        elif 'error' in progress_req.text:
-            print(progress_req.text)
+            counter = 0
+            sleep_timer = 10
+        elif error.casefold() in progress_response.text:
+            logging.error('Error encountered in response')
+            logging.error('Response from server: ' + progress_response.text)
             exit(1)
+
+        # Gradually increase the task progress check interval if the percentage does not change
+        counter += 1
+        if counter == 3:
+            sleep_timer = 20
+        elif counter == 4:
+            sleep_timer = 30
+        elif counter == 6:
+            sleep_timer = 60
 
         if task_progress < 100:
-            time.sleep(10)
+            time.sleep(sleep_timer)
 
-    if task_progress == 100:
+    file_name = re.search('(?<=result":")(.*?)(?=\",)', progress_response.text).group(1)
+    file_url = url + '/plugins/servlet/' + file_name
 
-        download = re.search('(?<=result":")(.*?)(?=\",)', progress_req.text).group(1)
+    operations.save_backup_file_url(FILE_LAST_BACKUP_URL, file_url)
+    logging.info('Backup file can also be downloaded from ' + file_url)
 
-        print('Backup complete, downloading files.')
-        print('Backup file can also be downloaded from ' + url + '/plugins/servlet/' + download)
-
-        date = time.strftime("%Y%m%d_%H%M%S")
-
-        filename = account + '_backup_' + date + '.zip'
-
-        file = session.get(url + '/plugins/servlet/' + download, stream=True)
-
-        file.raise_for_status()
-
-        with open(folder + filename, 'wb') as handle:
-            for block in file.iter_content(1024):
-                handle.write(block)
-
-        print(filename + 'downloaded to ' + folder)
+    return file_url
 
 
 def main():
+    site, user_name, api_token, attachments, folder, download_only, s3_bucket = operations.parse_arguments(PROGRAM_NAME)
 
-    parser = argparse.ArgumentParser('jira backup')
-    parser.add_argument('-s', '--site', help='Your site/account name <account>.atlassian.net')
-    parser.add_argument('-u', '--user', help='Your email address for the jira account with admin rights')
-    parser.add_argument('-t', '--token', help='API token for the user account')
-    parser.add_argument('-f', '--folder', help='Destination folder for the backup file')
+    logging.basicConfig(format='%(levelname)s %(asctime)s %(message)s',
+                        level=logging.INFO,
+                        encoding='utf-8',
+                        handlers=[
+                            logging.FileHandler('jira_backup.log'),
+                            logging.StreamHandler()
+                        ])
 
-    args = parser.parse_args()
-    site = args.__dict__["site"]
-    user_name = args.__dict__["user"]
-    api_token = args.__dict__["token"]
-    folder = args.__dict__["folder"]
+    # Get a session
+    session = operations.get_session(user_name, api_token)
 
-    jira_backup(site, user_name, api_token, JSON_DATA, folder)
+    if download_only:
+        logging.info('Download only option is used')
+        file_url = operations.get_backup_file_url(FILE_LAST_BACKUP_URL)
+    else:
+        file_url = jira_backup(site, folder, session)
+
+    successful = False
+    if file_url is not None:
+        logging.info('Backup complete, downloading file to ' + folder)
+        successful = operations.download_backup_and_upload_to_s3(file_url, folder, session, PROGRAM_NAME, s3_bucket)
+
+    if successful:
+        logging.info('Backup job is finished successfully')
+    else:
+        logging.info('Backup job finished with errors. See the logs.')
 
 
 if __name__ == '__main__':

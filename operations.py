@@ -95,11 +95,11 @@ def download_backup_and_upload_to_s3(file_url, folder, session, program_name, s3
     result = False
     try:
         file = session.get(file_url, stream=True)
+        file.raise_for_status()
+
         total_size = file.headers.get('content-length')
         total_size_mb = int(total_size) // 1000000
         logging.info(f'Total size of backup file is {total_size_mb} MB')
-
-        file.raise_for_status()
 
         with open(full_path, 'wb') as f:
             # Call performance counter first time to measure the elapsed time at the end

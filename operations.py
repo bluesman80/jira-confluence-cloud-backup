@@ -20,10 +20,6 @@ def parse_arguments(program):
                         help='Use this argument to include attachments in the backup. If omitted, attachments will not '
                              'be included ',
                         action='store_true')
-    parser.add_argument('-d', '--download-only',
-                        help='Use this argument to try downloading the latest backup file without initiating a new '
-                             'backup.',
-                        action='store_true')
     parser.add_argument('-s3', '--s3-bucket', help='Name of the S3 bucket to upload the backup file. Note that in '
                                                    'to upload to S3, AWS CLI must be installed and configured')
 
@@ -33,7 +29,6 @@ def parse_arguments(program):
            args["token"], \
            args["with_attachments"], \
            args["folder"], \
-           args["download_only"], \
            args["s3_bucket"]
 
 
@@ -98,7 +93,12 @@ def download_backup_and_upload_to_s3(file_url, folder, session, program_name, s3
         file.raise_for_status()
 
         total_size = file.headers.get('content-length')
-        total_size_mb = int(total_size) // 1000000
+
+        if total_size.isnumeric():
+            total_size_mb = int(total_size) // 1000000
+        else:
+            raise ValueError('Total size of backup file was not found in the header')
+
         logging.info(f'Total size of backup file is {total_size_mb} MB')
 
         with open(full_path, 'wb') as f:
@@ -117,10 +117,12 @@ def download_backup_and_upload_to_s3(file_url, folder, session, program_name, s3
         logging.info(f"Download finished in {(time.perf_counter()):.2f} seconds")
     except KeyboardInterrupt:
         logging.info('Download is interrupted by user')
+    except ValueError as e:
+        logging.error(e)
     except Exception:
         logging.error('Error while downloading/saving backup file')
         logging.error(traceback.format_exc())
-    finally:
+    else:
         if os.path.isfile(full_path) and os.stat(full_path).st_size == int(total_size):
             logging.info(backup_file + ' is saved to ' + folder)
             result = True

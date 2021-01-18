@@ -58,7 +58,7 @@ def conf_backup(account, attachments, session):
                 logging.info('Hit the limit of backup frequency. Trying to download from the last known location')
                 progress = session.get(account_url + '/rest/obm/1.0/getprogress')
                 # Can return None here, caller should handle it
-                return get_file_name_from_progress_response(progress, account_url)
+                return get_file_url_from_progress_response(progress, account_url)
 
     except AttributeError:
         logging.error('Backup could not start (AttributeError)')
@@ -107,11 +107,11 @@ def conf_backup(account, attachments, session):
             logging.error('Response from server: ' + progress.text)
             exit(1)
 
-    file_url = get_file_name_from_progress_response(progress, account_url)
+    file_url = get_file_url_from_progress_response(progress, account_url)
     return file_url
 
 
-def get_file_name_from_progress_response(progress_response, account_url):
+def get_file_url_from_progress_response(progress_response, account_url):
     if type(progress_response) is None:
         return None
 

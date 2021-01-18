@@ -40,32 +40,6 @@ def get_session(username, token):
     return session
 
 
-def save_backup_file_url(file_name, url):
-    # Save the latest backup file url to a file
-    try:
-        with open(file_name, 'w', encoding='UTF-8') as sf:
-            sf.write(url)
-    except IOError:
-        logging.error(f'Could not save the backup file URL to {file_name}')
-    else:
-        logging.info(f'Backup file URL is saved to {file_name}')
-
-
-def get_backup_file_url(file_name):
-    if not os.path.isfile(file_name):
-        logging.error(f'File does not exist: {file_name}')
-        return None
-
-    try:
-        with open(file_name, 'r', encoding='UTF-8') as sf:
-            file_url = sf.read().strip()
-    except IOError:
-        logging.error('Cannot read the file URL')
-        return None
-    else:
-        return file_url
-
-
 def download_backup_and_upload_to_s3(file_url, folder, session, program_name, s3_bucket):
     """Download the backup file from Atlassian and upload it to S3
 

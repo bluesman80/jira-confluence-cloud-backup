@@ -126,7 +126,7 @@ def get_file_name_from_progress_response(progress_response, account_url):
 
         return file_url
     else:
-        logging.error('Error in backup file name. File name is not set.')
+        logging.error('Error in backup file name. File name is not set')
         return None
 
 

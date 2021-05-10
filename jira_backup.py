@@ -94,23 +94,13 @@ def jira_backup(account, attachments, session):
             logging.info(f'Progress: {task_progress}%')
             last_progress = task_progress
             counter = 0
-            sleep_timer = 10
         elif error.casefold() in progress.text:
             logging.error('Error encountered in response')
             logging.error('Response from server: ' + progress.text)
             exit(1)
 
-        # Gradually increase the task progress check interval if the percentage does not change
-        counter += 1
-        if counter == 3:
-            sleep_timer = 20
-        elif counter == 4:
-            sleep_timer = 30
-        elif counter == 6:
-            sleep_timer = 60
-
         if task_progress < 100:
-            time.sleep(sleep_timer)
+            time.sleep(60)
 
     file_url = get_file_url_from_progress_response(progress, account_url)
 

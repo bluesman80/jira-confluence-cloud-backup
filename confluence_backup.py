@@ -82,6 +82,7 @@ def conf_backup(account, attachments, session):
         estimated_percentage = str(re.search('(?<=Estimated progress: )(.*?)(?=\")', progress.text))
 
         # While there is an estimated percentage this will be output.
+        sleep_timer = 60
         if estimated_percentage != 'None':
             # Regex for current status.
             current_status = str(
@@ -90,7 +91,7 @@ def conf_backup(account, attachments, session):
             estimated_percentage_value = str(
                 re.search('(?<=Estimated progress: )(.*?)(?=\")', progress.text).group(1))
             logging.info('Action: ' + current_status + ' / Overall progress: ' + estimated_percentage_value)
-            time.sleep(10)
+            time.sleep(sleep_timer)
         # Once no estimated percentage in response the alternative progress is output.
         elif estimated_percentage == 'None':
             # Regex for current status.
@@ -100,7 +101,7 @@ def conf_backup(account, attachments, session):
             alt_percentage_value = str(
                 re.search('(?<=alternativePercentage\":\")(.*?)(?=\")', progress.text).group(1))
             logging.info('Action: ' + current_status + ' / Overall progress: ' + alt_percentage_value)
-            time.sleep(10)
+            time.sleep(sleep_timer)
         # Catch any instance of the of word 'error' in the response and exit script.
         elif error.casefold() in progress.text:
             logging.error('Error encountered in response')

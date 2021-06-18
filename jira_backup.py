@@ -71,8 +71,7 @@ def jira_backup(account, attachments, session):
     # set starting task progress values outside of while loop and if statements.
     task_progress = 0
     last_progress = -1
-    sleep_timer = 10
-    counter = 0
+    sleep_timer = 60
     progress = None
 
     # Get progress and print update until complete
@@ -93,14 +92,13 @@ def jira_backup(account, attachments, session):
         if (last_progress != task_progress) and error.casefold() not in progress.text:
             logging.info(f'Progress: {task_progress}%')
             last_progress = task_progress
-            counter = 0
         elif error.casefold() in progress.text:
             logging.error('Error encountered in response')
             logging.error('Response from server: ' + progress.text)
             exit(1)
 
         if task_progress < 100:
-            time.sleep(60)
+            time.sleep(sleep_timer)
 
     file_url = get_file_url_from_progress_response(progress, account_url)
 

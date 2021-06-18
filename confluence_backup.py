@@ -74,39 +74,43 @@ def conf_backup(account, attachments, session):
     # Check for filename match in response
     file_name = str(re.search('(?<=fileName\":\")(.*?)(?=\")', progress.text))
 
-    # If no file name match in JSON response keep outputting progress every 10 seconds
+    # If no file name match in JSON response keep logging progress every 60 seconds
     while file_name == 'None':
         progress = session.get(account_url + '/rest/obm/1.0/getprogress')
         # Regex to extract elements of JSON progress response.
         file_name = str(re.search('(?<=fileName\":\")(.*?)(?=\")', progress.text))
         estimated_percentage = str(re.search('(?<=Estimated progress: )(.*?)(?=\")', progress.text))
 
-        # While there is an estimated percentage this will be output.
         sleep_timer = 60
-        if estimated_percentage != 'None':
-            # Regex for current status.
-            current_status = str(
-                re.search('(?<=currentStatus\":\")(.*?)(?=\")', progress.text).group(1))
-            # Regex for percentage progress value
-            estimated_percentage_value = str(
-                re.search('(?<=Estimated progress: )(.*?)(?=\")', progress.text).group(1))
-            logging.info('Action: ' + current_status + ' / Overall progress: ' + estimated_percentage_value)
-            time.sleep(sleep_timer)
-        # Once no estimated percentage in response the alternative progress is output.
-        elif estimated_percentage == 'None':
-            # Regex for current status.
-            current_status = str(
-                re.search('(?<=currentStatus\":\")(.*?)(?=\")', progress.text).group(1))
-            # Regex for alternative percentage value.
-            alt_percentage_value = str(
-                re.search('(?<=alternativePercentage\":\")(.*?)(?=\")', progress.text).group(1))
-            logging.info('Action: ' + current_status + ' / Overall progress: ' + alt_percentage_value)
-            time.sleep(sleep_timer)
-        # Catch any instance of the of word 'error' in the response and exit script.
-        elif error.casefold() in progress.text:
+        progress_percentage = 0
+        # Catch any instance of the word 'error' in the response and exit script.
+        if error.casefold() in progress.text:
             logging.error('Error encountered in response')
             logging.error('Response from server: ' + progress.text)
             exit(1)
+        else:
+            # Regex for current status.
+            current_status = str(
+                re.search('(?<=currentStatus\":\")(.*?)(?=\")', progress.text).group(1))
+            # While there is an estimated percentage it will be returned.
+            if estimated_percentage != 'None':
+                # Regex for percentage progress value
+                estimated_percentage_value = str(
+                    re.search('(?<=Estimated progress: )(.*?)(?=\")', progress.text).group(1))
+            # When there is no estimated percentage in response, the alternative progress is returned.
+            elif estimated_percentage == 'None':
+                # Regex for alternative percentage value.
+                estimated_percentage_value = str(
+                    re.search('(?<=alternativePercentage\":\")(.*?)(?=\")', progress.text).group(1))
+
+            logging.info('Action: ' + current_status + ' / Overall progress: ' + estimated_percentage_value)
+
+            try:
+                progress_percentage = int(estimated_percentage_value[:-1])
+            except ValueError:
+                pass
+            if progress_percentage < 100:
+                time.sleep(sleep_timer)
 
     file_url = get_file_url_from_progress_response(progress, account_url)
     return file_url
